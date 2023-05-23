@@ -1,0 +1,84 @@
+# Catalog
+catalog = {
+    "Product A": 20,
+    "Product B": 40,
+    "Product C": 50
+}
+
+# Discount Rules
+discount_rules = {
+    "flat_10_discount": {"threshold": 200, "discount_amount": 10},
+    "bulk_5_discount": {"threshold": 10, "discount_percentage": 5},
+    "bulk_10_discount": {"threshold": 20, "discount_percentage": 10},
+    "tiered_50_discount": {"total_quantity_threshold": 30, "single_product_quantity_threshold": 15, "discount_percentage": 50}
+}
+
+# Fees
+gift_wrap_fee = 1
+shipping_fee_per_package = 5
+units_per_package = 10
+
+# Initialize variables
+cart = {}
+total_quantity = 0
+total_amount = 0
+
+# Input quantity and gift wrap information for each product
+for product in catalog:
+    quantity = int(input(f"Enter the quantity of {product}: "))
+    is_gift_wrapped = input(f"Is {product} wrapped as a gift? (yes/no): ").lower() == "yes"
+    cart[product] = {"quantity": quantity, "gift_wrapped": is_gift_wrapped}
+    total_quantity += quantity
+    total_amount += quantity * catalog[product]
+
+# Calculate discount and apply the most beneficial one
+discount_applied = None
+discount_amount = 0
+
+# Check "flat_10_discount"
+if total_amount > discount_rules["flat_10_discount"]["threshold"]:
+    discount_applied = "flat_10_discount"
+    discount_amount = discount_rules["flat_10_discount"]["discount_amount"]
+
+# Check "bulk_5_discount"
+for product in cart:
+    if cart[product]["quantity"] > discount_rules["bulk_5_discount"]["threshold"]:
+        product_price = catalog[product]
+        product_quantity = cart[product]["quantity"]
+        product_discount = (product_price * product_quantity * discount_rules["bulk_5_discount"]["discount_percentage"]) / 100
+        if product_discount > discount_amount:
+            discount_applied = "bulk_5_discount"
+            discount_amount = product_discount
+
+# Check "bulk_10_discount"
+if total_quantity > discount_rules["bulk_10_discount"]["threshold"]:
+    cart_discount = (total_amount * discount_rules["bulk_10_discount"]["discount_percentage"]) / 100
+    if cart_discount > discount_amount:
+        discount_applied = "bulk_10_discount"
+        discount_amount = cart_discount
+
+# Check "tiered_50_discount"
+if total_quantity > discount_rules["tiered_50_discount"]["total_quantity_threshold"]:
+    for product in cart:
+        if cart[product]["quantity"] > discount_rules["tiered_50_discount"]["single_product_quantity_threshold"]:
+            product_price = catalog[product]
+            product_quantity = cart[product]["quantity"]
+            product_discount = (product_price * (product_quantity - discount_rules["tiered_50_discount"]["single_product_quantity_threshold"]) * discount_rules["tiered_50_discount"]["discount_percentage"]) / 100
+            if product_discount > discount_amount:
+                discount_applied = "tiered_50_discount"
+                discount_amount = product_discount
+
+# Calculate fees
+gift_wrap_fee_total = sum([cart[product]["quantity"] * gift_wrap_fee for product in cart if cart[product]["gift_wrapped"]])
+shipping_fee_total = (total_quantity // units_per_package) * shipping_fee_per_package
+
+# Calculate totals
+subtotal = total_amount
+total = subtotal - discount_amount + gift_wrap_fee_total + shipping_fee_total
+
+# Output details
+print("Product Name: ",product,"||Quantity: ",quantity,"||Total Amount: ",total_amount)
+print("Subtotal: ",subtotal)
+print("Discount Name Applied: ",discount_applied,"||Discount Amount: ",discount_amount)
+print("Shipping fee: ",shipping_fee_total,"||Gift Wrap Fee: ",gift_wrap_fee)
+print("Total: ",total)
